@@ -30,7 +30,7 @@ data {
 
     for(j in 1:J) {
       target += log_mix(theta[n], normal_lpdf(y[n,j] | mu0[n], sigma[n]),
-                        normal_lpdf(y[n,j] |  mu1[n], sigma[n]));
+                        normal_lpdf(y[n,j] |  mu0[n] + mu1[n], sigma[n]));
     }
   }
   
