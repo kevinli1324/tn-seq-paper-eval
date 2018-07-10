@@ -7,7 +7,7 @@ data {
   vector<lower = 0, upper = 1>[N] theta; //mixing proportions
   vector[N] mu0; //locations of mixture components
   vector[N] mu1;
-  //real<lower = 0> alpha;
+  //real alpha[N];
   vector<lower = 0>[N] sigma;
   real<lower = 0, upper = 10> aleph;
   real<lower = 0, upper = 10> tau;
@@ -20,9 +20,9 @@ data {
   aleph ~ uniform(0,10);
   tau ~ uniform(0,10);
   
-  mu0 ~ normal(0, .15);
-  mu1 ~ normal(-2, 10);
-  
+  mu0 ~ normal(0, .1);
+  mu1 ~ normal(-6, 3);
+
   for(n in 1:N) {
 
     theta[n] ~ beta(aleph, tau);
@@ -35,4 +35,3 @@ data {
   }
   
 }
-
