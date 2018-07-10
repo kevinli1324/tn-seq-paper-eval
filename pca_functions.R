@@ -367,17 +367,47 @@ pca_wrapper <- function(data, princomps, multicore = F, method = "princomp", fil
   })
   
   param_vec <- c()
-  
-  for(i in 1:length(param_list)) {
-    vector_rename <- param_list[[i]]
-    for(param in c("theta", "mu1", "mu0", "sigma")) {
-      position_index <- grepl(param, names(vector_rename))
-      for(j in 1:length(which(assign == i))) {
-        names(vector_rename)[position_index][j] <-  paste(param,"[", which(assign == i)[j], "]", sep = "")
+  if (!any(grepl("mu1", names(param_list[[1]])))) {
+    for (i in 1:length(param_list)) {
+      vector_rename <- param_list[[i]]
+      for (param in c("theta" , "sigma")) {
+        position_index <- grepl(param, names(vector_rename))
+        for (j in 1:length(which(assign == i))) {
+          names(vector_rename)[position_index][j] <-
+            paste(param, "[", which(assign == i)[j], "]", sep = "")
+        }
       }
+      
+      position_index_1 <-
+        grepl(",1]", names(vector_rename))
+      position_index_2 <-
+        grepl(",2]", names(vector_rename))
+      
+      for (j in 1:length(which(assign == i))) {
+          names(vector_rename)[position_index_1][j] <-
+            paste0("mu[", which(assign == i)[j], ",", 1, "]")
+          
+          names(vector_rename)[position_index_2][j] <-
+            paste0("mu[", which(assign == i)[j], ",", 2, "]")
+      }
+      param_vec <- append(param_vec, vector_rename)
     }
-    param_vec <- append(param_vec, vector_rename)
+  } else {
+    for (i in 1:length(param_list)) {
+      vector_rename <- param_list[[i]]
+      for (param in c("theta", "mu1", "mu0", "sigma")) {
+        position_index <- grepl(param, names(vector_rename))
+        for (j in 1:length(which(assign == i))) {
+          names(vector_rename)[position_index][j] <-
+            paste(param, "[", which(assign == i)[j], "]", sep = "")
+        }
+      }
+      param_vec <- append(param_vec, vector_rename)
+    }
+    
   }
   
+  
+
   return(list(means = param_vec, models = stan_models, assign = assign))
 }
