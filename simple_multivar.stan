@@ -6,22 +6,24 @@ data {
 } parameters {
   vector<lower = 0, upper = 1>[N] theta; //mixing proportions
   vector[N] mu0; //locations of mixture components
-  vector[N] mu1;
-  //real alpha[N];
+  vector<upper = 0>[N] mu1;
+  real<lower = 0> alpha;
   vector<lower = 0>[N] sigma;
   real<lower = 0, upper = 10> aleph;
   real<lower = 0, upper = 10> tau;
-
+  real<lower = 0> scale;
+  
 } model {
-  sigma ~ cauchy(0, 2);
+  sigma ~ normal(0, 2);
   
   //alpha ~ normal(0, 2);
   
   aleph ~ uniform(0,10);
   tau ~ uniform(0,10);
   
-  mu0 ~ normal(0, .1);
-  mu1 ~ normal(-6, 3);
+  mu0 ~ normal(0, scale);
+  scale ~ normal(0, .05);
+  mu1 ~ normal(-3, alpha);
 
   for(n in 1:N) {
 

@@ -366,7 +366,7 @@ plot_mix_reparam <- function(data, mean1, mean2, sd1, mix1, title) {
   temp_df <- data.frame(yay = as.numeric(data))
   ggplot() + geom_histogram(data = temp_df, aes(..density.., x = yay)) + 
     stat_function(data = temp_df,aes(x = yay),  fun = function(x, mean, sd) {dnorm(x, mean =mean, sd =sd)*mix1}, args = list(mean = mean1, sd = sd1), colour = "red") +
-    stat_function(data = temp_df,aes(x = yay),  fun = function(x, mean, sd) {dnorm(x, mean =mean, sd =sd)*(1-mix1)}, args = list(mean = mean1 + mean2, sd = sd1), colour = "blue") +
+    stat_function(data = temp_df,aes(x = yay),  fun = function(x, mean, sd) {dnorm(x, mean =mean, sd =sd)*(1-mix1)}, args = list(mean = mean1 +mean2, sd = sd1), colour = "blue") +
     ggtitle(paste(title, "Stan"))
   
 }
