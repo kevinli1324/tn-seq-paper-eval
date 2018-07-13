@@ -14,15 +14,15 @@ data {
   real<lower = 0> scale;
   
 } model {
-  sigma ~ normal(0, 2);
+  sigma ~ cauchy(0, 5);
   
-  //alpha ~ normal(0, 2);
-  
+
   aleph ~ uniform(0,10);
   tau ~ uniform(0,10);
   
   mu0 ~ normal(0, scale);
-  scale ~ normal(0, .05);
+  scale ~ inv_gamma(50, 1);
+  
   mu1 ~ normal(-3, alpha);
 
   for(n in 1:N) {

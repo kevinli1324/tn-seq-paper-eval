@@ -3,7 +3,7 @@ library(magrittr)
 library(parallel)
 das_model <- stan_model("simple_multivar.stan")
 
-assign_groups <- function(data_matrix, princomps, single = F, method) {
+assign_groups <- function(data_matrix, princomps, single = F, method, clusters) {
   eval_angle <- function(vec1, vec2) {
     acos(sum(vec1*vec2)/(norm(vec1, type = "2") * norm(vec2, type = "2")))
   }
@@ -33,7 +33,7 @@ assign_groups <- function(data_matrix, princomps, single = F, method) {
         } else {
           x / norm(x, type = "2")
         }}))
-    return_labels <- kmeans(normalize_matrix, princomps)
+    return_labels <- kmeans(normalize_matrix, clusters)
   	return(return_labels$cluster)
   }
   
@@ -95,8 +95,8 @@ return_partitions <- function(sample_matrix, label_matrix, princomps, params, si
   
 }
 
-partition_data <- function(sample_matrix, princomps, method, single = F) {
-  labels <- assign_groups(sample_matrix, princomps = princomps, single = single, method = method)
+partition_data <- function(sample_matrix, princomps, method, single = F, clusters) {
+  labels <- assign_groups(sample_matrix, princomps = princomps, single = single, method = method, clusters = clusters)
   return_list <- as.list(rep(NA, princomps))
   
   for(i in 1:princomps) {
@@ -347,8 +347,8 @@ run_pca_simulation <- function(gen_data, gen_labels, princomps, param_matrix = m
 }
 
 
-pca_wrapper <- function(data, princomps, multicore = F, method = "princomp", file, mean0 = rep(1, nrow(data))) {
-  groups <- partition_data(sample_matrix = data, princomps = princomps, method = method)
+pca_wrapper <- function(data, princomps, multicore = F, method = "princomp", file, mean0 = rep(1, nrow(data)), clusters = 1) {
+  groups <- partition_data(sample_matrix = data, princomps = princomps, method = method, clusters = clusters)
   assign <- groups$label
   data_list <- groups$data
   if(multicore){
