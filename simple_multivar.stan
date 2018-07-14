@@ -21,7 +21,7 @@ data {
   tau ~ uniform(0,10);
   
   mu0 ~ normal(0, scale);
-  scale ~ inv_gamma(50, 1);
+  scale ~ inv_gamma(25, 1);
   
   mu1 ~ normal(-3, alpha);
 
