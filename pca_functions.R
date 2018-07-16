@@ -1,6 +1,7 @@
 source("required_functions.R")
 library(magrittr)
 library(parallel)
+library(archetypes)
 das_model <- stan_model("simple_multivar.stan")
 
 assign_groups <- function(data_matrix, princomps, single = F, method, clusters) {
@@ -35,11 +36,24 @@ assign_groups <- function(data_matrix, princomps, single = F, method, clusters) 
         }}))
     return_labels <- kmeans(normalize_matrix, clusters)
   	return(return_labels$cluster)
+  } else if(method == "archetypes") {
+    print("archetypes")
+    normalize_matrix <-
+      t(apply(u[, 1:princomps], MARGIN = 1, function(x) {
+        if (norm(x, type = "2") == 0) {
+          return(x)
+        } else {
+          x / norm(x, type = "2")
+        }}))
+    
+    archetype_object <- archetypes(data_matrix, princomps)
+    v <- t(archetype_object$archetypes)
+    u <- data_matrix
   }
   
   if(single) {
     return_labels <- 1:nrow(data_matrix)
-    return(return_labels)
+    return(return_labels$archetypes)
   }
   
 
@@ -105,16 +119,6 @@ partition_data <- function(sample_matrix, princomps, method, single = F, cluster
   return(list(data = return_list, label = labels))
 }
 
-run_stan <- function(data, file, mean0 = 1) {
-  if(nrow(data) == 0) {
-    return(NA)
-  } else if(is.null(data)) {
-    return(NA)
-  }
-  stanFeed <- list(N = nrow(data ),  J = ncol(data),  y= data, t0 = mean0)
-  fit <- stan(file = file, iter = 500, chains = 4, control = list(max_treedepth = 15), data = stanFeed)
-  return(fit)
-}
 
 
 
@@ -347,15 +351,45 @@ run_pca_simulation <- function(gen_data, gen_labels, princomps, param_matrix = m
 }
 
 
-pca_wrapper <- function(data, princomps, multicore = F, method = "princomp", file, mean0 = rep(1, nrow(data)), clusters = 1) {
+run_stan <- function(data, file, mean0 = 1) {
+  if(nrow(data) == 0) {
+    return(NA)
+  } else if(is.null(data)) {
+    return(NA)
+  }
+  stanFeed <- list(N = nrow(data ),  J = ncol(data),  y= data, t0 = mean0)
+  fit <- stan(file = file, iter = 500, chains = 4, control = list(max_treedepth = 15), data = stanFeed)
+  return(fit)
+}
+
+optimize_wrapper <- function(data, file) {
+  if(nrow(data) == 0) {
+    return(NA)
+  } else if(is.null(data)) {
+    return(NA)
+  }
+  
+  stanFeed <- list(N = nrow(data), J = ncol(data), y = data)
+  result <- optimizing(object = stan_model(file), data = stanFeed)
+  return(result)
+}
+
+pca_wrapper <- function(data, princomps, multicore = F, method = "princomp", file, mean0 = rep(1, nrow(data)), clusters = 1, optimize = F) {
   groups <- partition_data(sample_matrix = data, princomps = princomps, method = method, clusters = clusters)
   assign <- groups$label
   data_list <- groups$data
-  if(multicore){
-    stan_models <- mclapply(data_list, run_stan, file = file, mean0 = mean0)
-    
+  
+  if (optimize == F) {
+    if (multicore) {
+      stan_models <-
+        mclapply(data_list, run_stan, file = file, mean0 = mean0)
+      
+    } else {
+      stan_models <-
+        lapply(data_list, run_stan, file = file, mean0 = mean0)
+    }
   } else {
-    stan_models <- lapply(data_list, run_stan, file = file, mean0 = mean0)
+    stan_models <- lapply(data_list, optimize_wrapper, file = file)
   }
   
   param_list <- lapply(stan_models, function(x) {
@@ -410,4 +444,29 @@ pca_wrapper <- function(data, princomps, multicore = F, method = "princomp", fil
   
 
   return(list(means = param_vec, models = stan_models, assign = assign))
+}
+
+
+#ta
+combine_princomps <- function(stans, labels) {
+  reduce_lamda <- function(init, x) {
+    cbind(as.data.frame(init), as.data.frame(x))
+  }
+  
+  a <- Reduce(reduce_lamda, stans)
+  
+  rename_vec <- names(a)
+  
+  for(params in c("theta", "sigma", "mu0", "mu1")) {
+    param_index <- grepl(params, rename_vec)
+    for(i in 1:length(stans)) {
+      label_index <- which(labels == i)
+      for(j in 1:length(label_index)) {
+        rename_vec[param_index][j] <-
+          paste(params, "[", label_index[j], "]", sep = "")
+      }
+    }
+  }
+  names(a) <- rename_vec
+  return(a)
 }
