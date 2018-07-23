@@ -65,7 +65,7 @@ gen_t_data <- function(n_genes, n_experiments, prop_affec, mean0_vec = real_coun
     sim_matrix[i,] <- logfit_sim/sqrt(.1**2 + logfit_dev)
   }
   
-  return(list(log_data = log_sim_matrix, labels = label_matrix, t_data = sim_matrix, mix_vec = mix_vec))
+  return(list(log_data = log_sim_matrix, labels = label_matrix, t_data = sim_matrix, mix_vec = mix_vec, fit = fit_kill, mean0 = mean0_vec))
   
   
 }
