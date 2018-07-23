@@ -1,6 +1,6 @@
 source("pca_functions.R")
 
-gen_t_data <- function(n_genes, n_experiments, prop_affec, mean0) {
+gen_t_data <- function(n_genes, n_experiments, prop_affec, mean0_vec = real_counts$set1IT002.Time0) {
 
   naive_std_dv <- function(n, n0) {
     (1/n + 1/n0)/log(2)**2
@@ -19,7 +19,14 @@ gen_t_data <- function(n_genes, n_experiments, prop_affec, mean0) {
     return(return_vec)
   }
   
-  t0 <- rpois(n_genes , mean0)
+ #t0 <- rpois(n_genes , mean0)
+  
+  scale <- (1/(mean(mean0_vec)*length(mean0_vec)))*sum((mean0_vec - mean(mean0_vec))^2)
+  shape <- mean(mean0_vec)/scale
+  
+  t0 <- rgamma(n_genes, scale = scale, shape = shape) + 1
+  
+  
   fit_kill <- gen_fit_mixture()
   result <- t0*fit_kill
   
@@ -29,17 +36,18 @@ gen_t_data <- function(n_genes, n_experiments, prop_affec, mean0) {
     return_vec <- rep(0, num)
     
     for(i in 1:num){
-      return_vec[i] <- ifelse(assignments[[i]] == 0, rpois(1, n0), abs(rpois(1, n)))
+      return_vec[i] <- ifelse(assignments[[i]] == 0, rpois(1, n0), rpois(1, n))
     }
     
     if(n == n0) {
-      labels = rep(0, num)
+      assignments = rep(0, num)
     }
     
     return(list(samples = return_vec, labels = assignments))
   }
   
-  experiment_object <- Map(gen_mixture, mixing = runif(n_genes, .1,.9), n = result, n0 = t0, num = n_experiments)
+  mix_vec <- runif(n_genes, .3, .95)
+  experiment_object <- Map(gen_mixture, mixing = mix_vec, n = result, n0 = t0, num = n_experiments)
   experiments <- lapply(experiment_object, function(x) {x[[1]]})
   experiment_labels <- lapply(experiment_object, function(x) {x[[2]]})
   control_time <- sapply(t0, function(x) {rpois(1,x)})
@@ -57,7 +65,7 @@ gen_t_data <- function(n_genes, n_experiments, prop_affec, mean0) {
     sim_matrix[i,] <- logfit_sim/sqrt(.1**2 + logfit_dev)
   }
   
-  return(list(log_data = log_sim_matrix, labels = label_matrix, t_data = sim_matrix))
+  return(list(log_data = log_sim_matrix, labels = label_matrix, t_data = sim_matrix, mix_vec = mix_vec))
   
   
 }
