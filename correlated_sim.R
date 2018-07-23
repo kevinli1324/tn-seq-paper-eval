@@ -7,7 +7,7 @@ options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 das_model <- stan_model("simple_multivar.stan")
 
-gen_cor_cluster <- function(n_genes, n_experiments = 160, mean0_vec, prop_affec = 1){
+gen_cor_cluster <- function(n_genes, n_experiments = 160, mean0_vec, prop_affec = 1, noise = F){
   
   naive_std_dv <- function(n, n0) {
     (1/n + 1/n0)/log(2)**2
@@ -74,7 +74,7 @@ gen_cor_cluster <- function(n_genes, n_experiments = 160, mean0_vec, prop_affec 
   fit_kill <- gen_fit_mixture()
   result <- t0*fit_kill
   
-
+  
   mixing <- runif(1 ,.5, .95)
   affected_cols <-  sample(1:n_experiments, n_experiments*mixing)
   shared_percent <- runif(n_genes, .5, .95) 
@@ -124,7 +124,7 @@ cor_wrapper <- function(num_clusters, n_experiments, max_group, prop_affec, mean
     return(init)
   }
   cluster_num <- sample(1:max_group, num_clusters, replace = T)
-
+  
   list_o_lists <- lapply(cluster_num, gen_cor_cluster, n_experiments = n_experiments, prop_affec = prop_affec, mean0_vec = mean0_vec)
   
   return_list <- Reduce(collapse_func, list_o_lists)
